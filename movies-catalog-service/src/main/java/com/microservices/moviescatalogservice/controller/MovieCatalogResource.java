@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,13 @@ import com.microservices.moviescatalogservice.bean.UserRatings;
 @RequestMapping("/catalogs")
 public class MovieCatalogResource {
 
+	@Value("${ratings.apiurl}")
+	private String ratingsApiUrl;
+	
+	@Value("${movie.apiurl}")
+	private String movieApiUrl;
+	
+	
 	@Autowired
 	private RestTemplate restTemp;
 
@@ -29,11 +37,11 @@ public class MovieCatalogResource {
 		movieCatalogOfUser.setUserId(userId);
 		
 		List<CatalogItems> catalogItemsList = null;
-		UserRatings userRatings = restTemp.getForObject("http://ratings-data-service/ratingsdata/" + userId, UserRatings.class);
+		UserRatings userRatings = restTemp.getForObject(ratingsApiUrl + userId, UserRatings.class);
 		List<Rating> ratings = userRatings.getRatings();
 		if (ratings != null && !ratings.isEmpty()) {
 			catalogItemsList = ratings.stream().map(rating -> {
-				Movie movie = restTemp.getForObject("http://movie-info-service/movies/" + rating.getMovieId(), Movie.class);
+				Movie movie = restTemp.getForObject(movieApiUrl + rating.getMovieId(), Movie.class);
 				return new CatalogItems(movie.getMovieName(), movie.getDescription(), rating.getRating());
 			}).collect(Collectors.toList());
 		}
